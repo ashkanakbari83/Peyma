@@ -214,3 +214,5 @@ html[data-world] body{background:radial-gradient(90% 55% at 50% -8%,color-mix(in
 /* ---------- Mobile fixes ---------- */
 .dg{grid-template-columns:minmax(0,1fr)}.dg>*,.rg>*,.hm{min-width:0}
 @media(min-width:900px){.dg{grid-template-columns:minmax(0,1.5fr) minmax(320px,1fr)}}
+
+.d.ro{cursor:default}.d.ro:active{transform:none}

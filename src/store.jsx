@@ -32,12 +32,13 @@ export function Provider({children}){
   const toggleTheme=()=>up(s=>{s.theme=dark?'light':'dark'})
 
   const toggle=(id,d=ymd(D0()),silent)=>{
+    if(d!==ymd(D0()))return ''   // ← فقط امروز؛ روزهای گذشته (و آینده) رو نادیده بگیر
     const c=structuredClone(S),h=c.habits.find(x=>x.id===id),was=h.log[d];was?delete h.log[d]:h.log[d]=1
     const t0=troph(S.habits).total,t1=troph(c.habits).total,df=t1-t0,a=wIdx(t0),b=wIdx(t1),wn=i=>L==='fa'?W[i].n:W[i].ne
     let m=(df>0?'+':'')+df+' 🏆'
     if(b>a)m=X(`🎊 دنیای ${b+1}: ${wn(b)} (${m})`,`🎊 World ${b+1}: ${wn(b)} (${m})`)
     else if(b<a)m=X(`⬇️ دنیای ${b+1} · ${m}`,`⬇️ World ${b+1} · ${m}`)
-    else if(!was&&d===ymd(D0())){
+    else if(!was){                // ← شرط d===ymd(D0()) دیگه لازم نیست، چون بالا چک شد
       const s=streak(h)
       if(h.goal&&s===h.goal)m+=X(' · 🎯 هدف تکمیل شد!',' · 🎯 Goal reached!')
       else if([3,7,14,21,30,50,100,365].includes(s))m+=X(` · 🔥 استریک ${s} روزه`,` · 🔥 ${s} day streak`)

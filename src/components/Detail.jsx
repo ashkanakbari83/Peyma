@@ -5,13 +5,18 @@ import Icon from './Icon.jsx'
 import {HeatMap} from './parts.jsx'
 
 function Day({d,k,h,fu}){
-  const {toggle,setSh,n,jal,fresh}=useApp(),tm=useRef(0),held=useRef(false)
-  const cls='d'+(h.log[k]?' on':'')+(k===ymd(D0())?' td':'')+(fu?' fu':'')+(h.notes[k]?' nt':'')+(fresh===h.id+k?' fresh':'')
+  const {toggle,setSh,n,jal,fresh,say,X}=useApp(),tm=useRef(0),held=useRef(false)
+  const today=ymd(D0()),past=k<today                       // روز گذشته
+  const cls='d'+(h.log[k]?' on':'')+(k===today?' td':'')+(fu?' fu':'')+(past?' ro':'')+(h.notes[k]?' nt':'')+(fresh===h.id+k?' fresh':'')
   const num=n(cal.day(d,jal));if(fu)return <div className={cls}>{num}</div>
   const stop=()=>clearTimeout(tm.current)
   return <div className={cls} onContextMenu={e=>e.preventDefault()} onPointerLeave={stop} onPointerCancel={stop}
     onPointerDown={()=>{held.current=false;tm.current=setTimeout(()=>{held.current=true;navigator.vibrate?.(20);setSh({k:'note',id:h.id,d:k})},550)}}
-    onPointerUp={()=>{stop();if(!held.current)toggle(h.id,k)}}>{num}</div>
+    onPointerUp={()=>{
+      stop();if(held.current)return
+      if(k===today)toggle(h.id,k)
+      else say(X('روزهای گذشته قابل ویرایش نیستن','Past days can\'t be edited'))
+    }}>{num}</div>
 }
 export default function Detail({id}){
   const {S,go,t,n,L,X,ar,jal}=useApp(),h=S.habits.find(x=>x.id===id)
