@@ -1,10 +1,12 @@
 import {useEffect,useId,useState} from 'react'
-import {W,wIdx,troph,ymd,D0} from '../lib/core.js'
+import {W,wIdx,troph,ymd,D0,streak} from '../lib/core.js'
+import {ITEMS} from '../lib/chest.js'
+import {shareCard} from '../lib/share.js'
 import {petMood,petSay} from '../lib/cheer.js'
 import {useApp} from '../store.jsx'
 
 /** the companion: a little creature in the colours of your current world; its mood follows your day */
-function Creature({mood,w,stage}){
+function Creature({mood,w,stage,hat}){
   const id=useId().replace(/:/g,''),happy=mood==='cheer',sleepy=mood==='sleepy',wave=mood==='back'||mood==='cheer'
   const body={fill:`url(#g${id})`},dark={stroke:'#2a1530',strokeWidth:3,fill:'none',strokeLinecap:'round'}
   return <svg className={'pc pm-'+mood} viewBox="0 0 120 120" width="112" height="112" aria-hidden="true">
@@ -29,6 +31,7 @@ function Creature({mood,w,stage}){
         :<path d="M50 74 Q60 85 70 74" style={dark}/>}
       {happy&&<path d="M55 84 Q60 89 65 84Z" fill="#ff6f91"/>}
     </g>
+    {hat&&<text className="phat" x="60" y="27" textAnchor="middle" fontSize="36">{hat}</text>}
     <text x="90" y="30" fontSize="26" transform="rotate(14 90 30)">{w.e}</text>
     {sleepy&&<text className="pz" x="86" y="46" fontSize="16" fill="#fff" opacity=".8">z</text>}
     {stage>=4&&<text className="psp a" x="14" y="30" fontSize="14">✨</text>}
@@ -36,16 +39,21 @@ function Creature({mood,w,stage}){
   </svg>
 }
 export default function Pet(){
-  const {S,L,X,n}=useApp(),total=troph(S.habits).total,wi=wIdx(total),w=W[wi],mood=petMood(S.habits)
+  const {S,L,X,n,say}=useApp(),total=troph(S.habits).total,wi=wIdx(total),w=W[wi],mood=petMood(S.habits)
   const name=S.petName||X('پیمو','Peymo'),tk=ymd(D0())
   const done=S.habits.filter(h=>h.log[tk]).length,all=S.habits.length
   const [line,setLine]=useState(''),[bump,setBump]=useState(0)
-  useEffect(()=>{setLine(petSay(S.habits,L,0,L==='fa'?w.t:w.te))},[mood,L,all,wi])
-  const poke=()=>{setBump(b=>b+1);setLine(petSay(S.habits,L,1))}
+  const hat=ITEMS.find(i=>i.id===S.hat)?.e||'',whys=S.habits.filter(h=>h.why)
+  const whyLine=()=>{const h=whys[Math.floor(Math.random()*whys.length)];return X('یادته چرا شروع کردی؟ ','Remember why you started? ')+'«'+h.why+'»'}
+  useEffect(()=>{setLine((mood==='back'||mood==='sleepy')&&whys.length&&Math.random()<.65?whyLine():petSay(S.habits,L,0,L==='fa'?w.t:w.te))},[mood,L,all,wi])
+  const poke=()=>{setBump(b=>b+1);setLine(whys.length&&Math.random()<.3?whyLine():petSay(S.habits,L,1))}
+  const share=()=>{const best=[...S.habits].sort((a,b)=>streak(b)-streak(a))[0]
+    shareCard({fa:L==='fa',world:w,rank:L==='fa'?w.t:w.te,streak:best?streak(best):0,trophies:total,habit:best?.name||'',done,total:all,hat,color:w.c})
+      .then(r=>{if(r==='saved')say(X('تصویر ذخیره شد 📸','Image saved 📸'));if(r==='fail')say(X('نشد؛ دوباره امتحان کن','Could not create the image'))})}
   return <section className={'pet pm-'+mood} style={{'--w1':w.c,'--w2':w.c2}}>
-    <button className="pbtn" key={'b'+bump} onClick={poke} aria-label={name}><Creature mood={mood} w={w} stage={wi}/></button>
+    <button className="pbtn" key={'b'+bump} onClick={poke} aria-label={name}><Creature mood={mood} w={w} stage={wi} hat={hat}/></button>
     <div className="pbub" key={line} role="status">
-      <div className="pnm"><b>{name}</b><span className="m">{L==='fa'?w.n:w.ne} · {n(`${done}/${all}`)}</span></div>
+      <div className="pnm"><b>{name}</b><span className="m">{L==='fa'?w.n:w.ne} · {n(`${done}/${all}`)}</span><button className="psh" onClick={share} title={X('اشتراک‌گذاری پیشرفت','Share progress')} aria-label={X('اشتراک‌گذاری پیشرفت','Share progress')}>📤</button></div>
       <p dir="auto">{line}</p>
     </div>
   </section>

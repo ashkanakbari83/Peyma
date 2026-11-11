@@ -19,6 +19,12 @@
 - **Trophy Road** – 10 worlds with a story each; every check-in earns trophies with a streak multiplier, and the page takes the theme of the world you are in
 - **Focus timer** – presets (5 → 90 min) + custom time, can auto-complete a habit when finished
 - **Insights** – 7/30/90/180-day ranges, per-habit filter, trends, weekday chart, overall heatmap, ranking
+- **Companion & celebrations** – a little creature that follows your day, confetti + sound on every check-in, a full-screen card when a new world opens
+- **Forgiving streaks** – earn a rest day every 7-day streak (max 2); they auto-repair a streak when you were away. Past days stay locked
+- **Two-level habits** – an optional tiny "minimum" version (⚡) keeps the streak alive on low days for half the trophies; upgrade to full anytime
+- **Why / if-then plan / reminder** – store your reason and an implementation intention per habit; reminders fire while the app is open
+- **Mystery chest** – finish all habits for a day for a chance at a cosmetic for your companion (guaranteed on milestones, never affects trophies)
+- **Share card & backup** – export a PNG progress card; download / restore a JSON backup
 - **Persian & English** (RTL / LTR), **Jalali & Gregorian** calendar
 - **Dark / Light / System** theme, fully responsive (phone → desktop)
 - **No backend** – everything is stored in your browser (`localStorage`), with backup / restore in Settings

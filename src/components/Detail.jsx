@@ -6,7 +6,7 @@ import {HeatMap} from './parts.jsx'
 
 function Day({d,k,h,fu}){
   const {toggle,setSh,n,jal,fresh,say,X}=useApp(),tm=useRef(0),held=useRef(false),today=ymd(D0())
-  const cls='d'+(h.log[k]?' on':h.fz?.[k]?' fz':'')+(k<today?' ro':'')+(k===today?' td':'')+(fu?' fu':'')+(h.notes[k]?' nt':'')+(fresh===h.id+k?' fresh':'')
+  const cls='d'+(h.log[k]?(h.log[k]===2?' on mn':' on'):h.fz?.[k]?' fz':'')+(k<today?' ro':'')+(k===today?' td':'')+(fu?' fu':'')+(h.notes[k]?' nt':'')+(fresh===h.id+k?' fresh':'')
   const num=n(cal.day(d,jal));if(fu)return <div className={cls}>{num}</div>
   const stop=()=>clearTimeout(tm.current)
   return <div className={cls} onContextMenu={e=>e.preventDefault()} onPointerLeave={stop} onPointerCancel={stop}
@@ -14,7 +14,7 @@ function Day({d,k,h,fu}){
     onPointerUp={()=>{stop();if(held.current)return;if(k===today)toggle(h.id,k);else say(X('روزهای گذشته قابل ویرایش نیستن','Past days can\'t be edited'))}}>{num}</div>
 }
 export default function Detail({id}){
-  const {S,go,t,n,L,X,ar,jal,rest}=useApp(),h=S.habits.find(x=>x.id===id)
+  const {S,go,t,n,L,X,ar,jal,rest,toggle}=useApp(),h=S.habits.find(x=>x.id===id)
   const [cm,setCm]=useState(()=>cal.first(D0(),jal))
   useEffect(()=>setCm(cal.first(D0(),jal)),[jal])
   useEffect(()=>{if(!h)go('home')},[h])
@@ -37,6 +37,14 @@ export default function Detail({id}){
             :X('روز استراحتی نداری. با هر ۷ روز استریک یکی میگیری.','No rest days left. You earn one with every 7-day streak.')}</p>
           {restOn?<button onClick={()=>rest(h.id,false)}>{X('لغو','Undo')}</button>:tok>0&&<button onClick={()=>rest(h.id,true)}>🧊 {X('استفاده از روز استراحت','Use a rest day')}</button>}
         </div>}
+        {h.min&&h.log[tk]!==1&&<div className="restb mn2"><p>{h.log[tk]===2?X('امروز نسخه‌ی حداقل رو زدی ⚡ استریکت سالمه؛ اگه حال داشتی کاملش کن (کاپ کامل میگیری).','You did the minimum today ⚡ Streak is safe; finish the full one for full trophies.')
+          :X(`حالش نیست؟ فقط «${h.min}» رو انجام بده؛ استریک میمونه (نصف کاپ).`,`Not feeling it? Just do "${h.min}" and the streak stays (half trophies).`)}</p>
+          <button onClick={()=>toggle(h.id,tk,false,h.log[tk]===2?1:2)}>{h.log[tk]===2?X('ارتقا به کامل','Upgrade to full'):'⚡ '+X('ثبت حداقل','Log minimum')}</button></div>}
+        {(h.why||h.cue||h.act)&&<section className="panel mycard">
+          {h.why&&<div><small>{X('چرا شروع کردم','WHY I STARTED')}</small><p dir="auto">«{h.why}»</p></div>}
+          {(h.cue||h.act)&&<div><small>{X('برنامه‌ی من','MY PLAN')}</small><p dir="auto">{X('وقتی','When')} <b>{h.cue||'…'}</b>{X('، اون وقت','')} → <b>{h.act||h.name}</b></p></div>}
+          {h.rt&&<div><small>{X('یادآور','REMINDER')}</small><p className="m">⏰ {n(h.rt)}</p></div>}
+        </section>}
         <div className="tiles" style={{gridTemplateColumns:'repeat(3,1fr)'}}>{tiles.map(([a,b])=><div className="tile" key={a}><b>{n(b)}</b><span>{a}</span></div>)}</div>
       </div>
       <section className="panel">

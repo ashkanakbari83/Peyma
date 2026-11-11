@@ -24,7 +24,8 @@ export const cal={
   len:(f,j)=>{let n=28;while(j?g2j(add(f,n))[1]===g2j(f)[1]:add(f,n).getMonth()===f.getMonth())n++;return n},
 }
 
-export const mk=(name,desc,color,icon)=>({id:uid(),name,desc,color,icon,type:'build',goal:0,created:ymd(D0()),log:{},notes:{},tokens:1,fz:{}})
+export const GIFT=3 // endowed progress: every new habit starts with a few trophies already in the bank
+export const mk=(name,desc,color,icon)=>({id:uid(),name,desc,color,icon,type:'build',goal:0,created:ymd(D0()),log:{},notes:{},tokens:1,fz:{},gift:GIFT,min:'',why:'',cue:'',act:'',rt:''})
 /* ---- streaks: a "rest day" (fz) keeps the chain alive but adds no day ---- */
 export const MAX_TOKENS=2
 const frozen=(h,k)=>!!(h.fz&&h.fz[k])
@@ -77,7 +78,10 @@ export const W=[
 export const gain=c=>Math.round(4*(1+.25*(Math.min(c,14)-1))) // 4 x (1 + 0.25 x (streakDay-1)), streakDay capped at 14
 export const wIdx=t=>W.reduce((a,w,i)=>t>=w.m?i:a,0)
 export function troph(habits){const day={},ph={};
-  habits.forEach(h=>{let c=0,p=null;ph[h.id]=0;for(const k of Object.keys(h.log).sort()){c=p&&linked(h,p,k)?c+1:1;p=k;const g=gain(c);day[k]=(day[k]||0)+g;ph[h.id]+=g}})
+  habits.forEach(h=>{let c=0,p=null;ph[h.id]=0
+    if(h.gift){const k=h.created||ymd(D0());day[k]=(day[k]||0)+h.gift;ph[h.id]+=h.gift}
+    for(const k of Object.keys(h.log).sort()){c=p&&linked(h,p,k)?c+1:1;p=k;let g=gain(c);if(h.log[k]===2)g=Math.max(1,Math.round(g/2)) // minimum version = half trophies, full streak
+      day[k]=(day[k]||0)+g;ph[h.id]+=g}})
   if(habits.length>1)Object.keys(day).forEach(k=>{if(habits.every(h=>h.log[k]))day[k]+=3}) // perfect-day bonus
   return{total:Object.values(day).reduce((a,b)=>a+b,0),day,ph}}
 export const fmt=s=>`${p2(Math.floor(s/60))}:${p2(s%60)}`

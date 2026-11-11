@@ -1,7 +1,8 @@
 import {createContext,useContext,useEffect,useRef,useState} from 'react'
-import {D0,ymd,mk,troph,wIdx,W,streak,fmt,settle,daysAway,MAX_TOKENS} from './lib/core.js'
+import {D0,ymd,p2,mk,troph,wIdx,W,streak,fmt,settle,daysAway,MAX_TOKENS} from './lib/core.js'
 import {cheer} from './lib/cheer.js'
 import {chime,buzz} from './lib/fx.js'
+import {drawItem} from './lib/chest.js'
 import {TR,PD} from './lib/i18n.js'
 
 export const KEY='peyma.v1'
@@ -14,7 +15,7 @@ const Ctx=createContext(null)
 export const useApp=()=>useContext(Ctx)
 
 export function Provider({children}){
-  const [S,setS]=useState(load),[R,setR]=useState(parse),[sh,setSh]=useState(null),[toast,setToast]=useState(null),[fresh,setFresh]=useState(null),[fx,setFx]=useState(null),[wup,setWup]=useState(null)
+  const [S,setS]=useState(load),[R,setR]=useState(parse),[sh,setSh]=useState(null),[toast,setToast]=useState(null),[fresh,setFresh]=useState(null),[fx,setFx]=useState(null),[wup,setWup]=useState(null),[chest,setChest]=useState(null)
   const ptr=useRef({x:0,y:0})
   const [sys,setSys]=useState(()=>typeof matchMedia!=='undefined'&&matchMedia('(prefers-color-scheme: dark)').matches)
   const tmr=useRef(0)
@@ -36,27 +37,35 @@ export function Provider({children}){
   const go=(v,id)=>{try{history.pushState(0,'',v==='home'?location.pathname:`#/${v}/${id||''}`)}catch{}setR({v,id});setSh(null);scrollTo(0,0)}
   const toggleTheme=()=>up(s=>{s.theme=dark?'light':'dark'})
 
-  /** tick / untick TODAY (past days are locked on purpose) */
-  const toggle=(id,d=ymd(D0()),silent)=>{
+  /** tick / untick TODAY (past days are locked on purpose). lvl 1 = full, 2 = the tiny "minimum" version */
+  const toggle=(id,d=ymd(D0()),silent,lvl=1)=>{
     if(d!==ymd(D0()))return ''
     const c=structuredClone(S),h=c.habits.find(x=>x.id===id);if(!h)return ''
     const was=h.log[d],away=daysAway(S.habits)
-    was?delete h.log[d]:h.log[d]=1
+    const un=was&&!(was===2&&lvl===1)           // tapping "full" on a minimum day upgrades it instead of removing it
+    un?delete h.log[d]:h.log[d]=lvl
     const t0=troph(S.habits).total,t1=troph(c.habits).total,df=t1-t0,a=wIdx(t0),b=wIdx(t1)
     const trophy=n((df>0?'+':'')+df+' 🏆')
-    let token=false,sk=0
-    if(!was){sk=streak(h);if(sk>0&&sk%7===0&&h.awd!==d){h.awd=d;if((h.tokens??1)<MAX_TOKENS){h.tokens=(h.tokens??1)+1;token=true}}}
+    let token=false,sk=0,gotChest=null
+    if(!un){sk=streak(h);if(sk>0&&sk%7===0&&h.awd!==d){h.awd=d;if((h.tokens??1)<MAX_TOKENS){h.tokens=(h.tokens??1)+1;token=true}}
+      // mystery chest: once per day, when the whole list is done. ~40% chance, guaranteed on milestones and after 2 dry days
+      if(c.habits.every(x=>x.log[d])&&c.cr!==d){c.cr=d
+        if(token||(sk>0&&sk%7===0)||b>a||(c.cm||0)>=2||Math.random()<.4){const r=drawItem(c.coll||[]);c.cm=0;if(r.id!=='_')c.coll=[...(c.coll||[]),r.id];gotChest=r}
+        else c.cm=(c.cm||0)+1}}
     setS(c);setFresh(id+d);setTimeout(()=>setFresh(null),600)
     if(b>a)setWup({idx:b,k:Date.now()})
-    if(was){if(!silent)say(trophy);return trophy}
-    if(silent)return trophy
+    const later=()=>{if(gotChest)setTimeout(()=>setChest({...gotChest,k:Date.now()}),(b>a?600:2500)+(sk>=7?900:0))}
+    if(un){if(!silent)say(trophy);return trophy}
+    if(silent){later();return trophy}
     const done=c.habits.filter(x=>x.log[d]).length
-    const {msg,big}=cheer({L,name:h.name,streak:sk,done,total:c.habits.length,comeback:away!=null&&away>=3,goal:!!h.goal&&sk===h.goal,token})
+    let {msg,big}=cheer({L,name:h.name,streak:sk,done,total:c.habits.length,comeback:away!=null&&away>=3,goal:!!h.goal&&sk===h.goal,token})
+    if(lvl===2&&!big)msg=X('حداقل رو زدی؛ از صفر خیلی بهتره 🌱 هر وقت حال داشتی کاملش کن','Minimum done, miles better than zero 🌱 Finish it whenever you feel like it')
     const mode=S.fx||'on'
     if(mode==='off'){say(n(msg)+' · '+trophy)}
     else{setFx({k:Date.now(),color:h.color,msg:n(msg),trophy,big:big||b>a,x:ptr.current.x,y:ptr.current.y});buzz(big);if(mode==='on')chime(sk,big||b>a)}
-    return trophy
+    later();return trophy
   }
+  const equip=id=>up(s=>{s.hat=s.hat===id?'':id})
 
   /** use / take back a rest day for today */
   const rest=(id,on=true)=>{
@@ -75,6 +84,21 @@ export function Provider({children}){
     if(r.used.length){const days=r.used.reduce((x,u)=>x+u.days,0),names=r.used.map(u=>u.name).join(X('، ',', '))
       say(X(`🧊 ${names}: نبودی، پس ${n(days)} روز استراحت خرج شد و استریکت سالمه`,`🧊 ${names}: you were away, so ${days} rest day${days>1?'s were':' was'} used and your streak is safe`))}
   },[dayK])
+
+  /* ---- daily reminders (fire only while the app is open: no server, no background push) ---- */
+  const Sr=useRef(S);Sr.current=S
+  useEffect(()=>{
+    const f=()=>{const s=Sr.current,now=new Date(),m=now.getHours()*60+now.getMinutes(),d=ymd(D0());let fired=null
+      s.habits.forEach(h=>{if(fired||!h.rt||h.log[d]||h.fz?.[d]||(s.rn||{})[h.id]===d)return
+        const [hh,mm]=h.rt.split(':').map(Number),diff=m-(hh*60+mm);if(diff<0||diff>90)return
+        fired=h})
+      if(!fired)return
+      const h=fired,body=(h.cue||h.act?`${h.cue?(L==='fa'?'وقتی '+h.cue:'When '+h.cue):''}${h.act?' → '+h.act:''}`:(L==='fa'?'یه قدم کوچیک کافیه 🌱':'One small step is enough 🌱'))+(h.why?`\n«${h.why}»`:'')
+      up(x=>{x.rn={...(x.rn||{}),[h.id]:d}})
+      try{if(typeof Notification!=='undefined'&&Notification.permission==='granted')new Notification((L==='fa'?'وقتشه: ':'Time for: ')+h.name,{body,tag:'peyma-'+h.id})}catch{}
+      say('⏰ '+h.name+(h.min?' · ⚡ '+h.min:''))}
+    f();const i=setInterval(f,20000);return()=>clearInterval(i)
+  },[L])
 
   /* ---- timer: lives here so it keeps running while you browse other tabs ---- */
   const [now,setNow]=useState(Date.now()),ts=S.timer||T0
@@ -95,5 +119,5 @@ export function Provider({children}){
   useEffect(()=>{if(ts.run&&left<=0)finish()},[ts.run,left])
   useEffect(()=>{document.title=ts.run?`${fmt(left)} · Peyma`:'Peyma · پیما'},[ts.run,left])
 
-  return <Ctx.Provider value={{S,setS,up,L,jal,pref,dark,X,n,t,ar,R,go,sh,setSh,toast,say,toggle,rest,fx,setFx,wup,setWup,toggleTheme,fresh,tm,fmt,setDur,start,pause,reset,addMin,setTH}}>{children}</Ctx.Provider>
+  return <Ctx.Provider value={{S,setS,up,L,jal,pref,dark,X,n,t,ar,R,go,sh,setSh,toast,say,toggle,rest,fx,setFx,wup,setWup,chest,setChest,equip,toggleTheme,fresh,tm,fmt,setDur,start,pause,reset,addMin,setTH}}>{children}</Ctx.Provider>
 }

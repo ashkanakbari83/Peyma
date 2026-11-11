@@ -1,5 +1,6 @@
-import {useEffect,useMemo} from 'react'
-import {pieces} from '../lib/fx.js'
+import {useEffect,useMemo,useState} from 'react'
+import {pieces,chime,buzz} from '../lib/fx.js'
+import {RAR} from '../lib/chest.js'
 import {W} from '../lib/core.js'
 import {useApp} from '../store.jsx'
 
@@ -32,6 +33,36 @@ export function WorldUp(){
       <div className="rew"><span>🎖️</span><div><small>{X('عنوان جدید','New rank')}</small><b>{fa?w.t:w.te}</b></div></div>
       <p>{fa?w.s:w.se}</p>
       <button className="save" onClick={()=>setWup(null)}>{X('بزن بریم!','Let\'s go!')}</button>
+    </div>
+  </div>
+}
+
+/** mystery chest: tap to open, reveals a cosmetic for your companion (never affects trophies) */
+export function Chest(){
+  const {chest,setChest,wup,L,X,S,equip}=useApp(),[open,setOpen]=useState(false)
+  useEffect(()=>{setOpen(false)},[chest&&chest.k])
+  const r=chest?RAR[chest.r]:RAR[0]
+  const ps=useMemo(()=>open?pieces(chest.r>=2?70:36,[r.c,'#ffffff','#fbbf24','#f472b6']):[],[open])
+  if(!chest||wup)return null
+  const fa=L==='fa',note=chest.id==='_',on=S.hat===chest.id
+  const reveal=()=>{setOpen(true);buzz(chest.r>=2);if((S.fx||'on')==='on')chime(7,chest.r>=2)}
+  return <div className="ov wu" onPointerDown={e=>e.target===e.currentTarget&&open&&setChest(null)}>
+    {open&&<div aria-hidden="true">{ps.map((p,i)=>dot(p,i,'50%','36%'))}</div>}
+    <div className="wucard chest" style={{'--w1':open?r.c:'#a78bfa','--w2':'#1b1030'}} role="dialog" aria-modal="true">
+      {!open?<>
+        <small className="m">{X('جایزه‌ی امروز','TODAY\'S REWARD')}</small>
+        <button className="chbox" onClick={reveal} aria-label={X('باز کردن صندوق','Open the chest')}>🎁</button>
+        <h2>{X('یه صندوق برات اومده!','A chest for you!')}</h2>
+        <p>{X('به‌خاطر اینکه امروزت رو کامل کردی. بزن ببینیم چی توشه 👆','For finishing today. Tap to see what is inside 👆')}</p>
+      </>:<>
+        <small className="m" style={{color:r.c}}>{fa?r.fa:r.en}</small>
+        <div className="wuo chi">{chest.e}</div>
+        <h2>{fa?chest.fa:chest.en}</h2>
+        {note?<p>{fa?chest.qfa:chest.qen}</p>:<p>{X('به کلکسیون پیمو اضافه شد. هر وقت خواستی از تنظیمات عوضش کن.','Added to your companion\'s collection. Change it anytime from Settings.')}</p>}
+        {note?<button className="save" onClick={()=>setChest(null)}>{X('ممنون 🤍','Thanks 🤍')}</button>
+          :<><button className="save" onClick={()=>{if(!on)equip(chest.id);setChest(null)}}>{X('بپوشونش!','Put it on!')}</button>
+          <button className="save gh" style={{marginTop:8,height:46,fontSize:16}} onClick={()=>setChest(null)}>{X('بعداً','Later')}</button></>}
+      </>}
     </div>
   </div>
 }
