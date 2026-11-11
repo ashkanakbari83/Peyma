@@ -48,6 +48,8 @@ function Settings({close}){
     <Lb>{t('LANGUAGE')}</Lb><Seg v={S.lang||'fa'} on={k=>up(s=>{s.lang=k})} opts={[['fa','فارسی'],['en','English']]}/>
     <Lb>{X('تم','THEME')}</Lb><Seg v={pref} on={k=>up(s=>{s.theme=k})} opts={[['dark',X('تیره','Dark')],['light',X('روشن','Light')],['system',X('سیستم','System')]]}/>
     <Lb>{t('CALENDAR')}</Lb><Seg v={S.cal==='g'?'g':'j'} on={k=>up(s=>{s.cal=k})} opts={[['j',X('شمسی','Jalali')],['g',X('میلادی','Gregorian')]]}/>
+    <Lb>{X('جلوه‌ها و صدای جشن','CELEBRATION EFFECTS')}</Lb><Seg v={S.fx||'on'} on={k=>up(s=>{s.fx=k})} opts={[['on',X('کامل','Full')],['quiet',X('بی‌صدا','Silent')],['off',X('خاموش','Off')]]}/>
+    <Lb>{X('اسم همراهت','YOUR COMPANION\'S NAME')}</Lb><input className="in" dir="auto" maxLength={14} value={S.petName||''} placeholder={X('پیمو','Peymo')} onChange={e=>up(s=>{s.petName=e.target.value})}/>
     <Lb>{t('BACKUP (COPY)')}</Lb><textarea className="in" readOnly value={json} onFocus={e=>e.target.select()}/>
     <button className="save gh" onClick={()=>{navigator.clipboard?.writeText(json).catch(()=>{});say(t('Copied'))}}>{t('Copy backup')}</button>
     <Lb>{t('RESTORE (PASTE)')}</Lb><textarea className="in" value={txt} onChange={e=>setTxt(e.target.value)} placeholder='{"habits":[…]}'/>

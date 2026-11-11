@@ -1,5 +1,7 @@
 import {createContext,useContext,useEffect,useRef,useState} from 'react'
-import {D0,ymd,mk,troph,wIdx,W,streak,fmt} from './lib/core.js'
+import {D0,ymd,mk,troph,wIdx,W,streak,fmt,settle,daysAway,MAX_TOKENS} from './lib/core.js'
+import {cheer} from './lib/cheer.js'
+import {chime,buzz} from './lib/fx.js'
 import {TR,PD} from './lib/i18n.js'
 
 export const KEY='peyma.v1'
@@ -12,7 +14,8 @@ const Ctx=createContext(null)
 export const useApp=()=>useContext(Ctx)
 
 export function Provider({children}){
-  const [S,setS]=useState(load),[R,setR]=useState(parse),[sh,setSh]=useState(null),[toast,setToast]=useState(null),[fresh,setFresh]=useState(null)
+  const [S,setS]=useState(load),[R,setR]=useState(parse),[sh,setSh]=useState(null),[toast,setToast]=useState(null),[fresh,setFresh]=useState(null),[fx,setFx]=useState(null),[wup,setWup]=useState(null)
+  const ptr=useRef({x:0,y:0})
   const [sys,setSys]=useState(()=>typeof matchMedia!=='undefined'&&matchMedia('(prefers-color-scheme: dark)').matches)
   const tmr=useRef(0)
   const L=S.lang||'fa',jal=S.cal!=='g',pref=S.theme||'dark',dark=pref==='system'?sys:pref==='dark'
@@ -26,26 +29,52 @@ export function Provider({children}){
   useEffect(()=>{const mq=matchMedia('(prefers-color-scheme: dark)'),f=()=>setSys(mq.matches);mq.addEventListener('change',f);return()=>mq.removeEventListener('change',f)},[])
   useEffect(()=>{const f=()=>setR(parse());addEventListener('popstate',f);return()=>removeEventListener('popstate',f)},[])
 
+  useEffect(()=>{ptr.current={x:innerWidth/2,y:innerHeight*.6};const f=e=>{ptr.current={x:e.clientX,y:e.clientY}};addEventListener('pointerdown',f,{capture:true});return()=>removeEventListener('pointerdown',f,{capture:true})},[])
+
   const up=fn=>setS(s=>{const c=structuredClone(s);fn(c);return c})
   const say=m=>{setToast({m,k:Date.now()});clearTimeout(tmr.current);tmr.current=setTimeout(()=>setToast(null),2600)}
   const go=(v,id)=>{try{history.pushState(0,'',v==='home'?location.pathname:`#/${v}/${id||''}`)}catch{}setR({v,id});setSh(null);scrollTo(0,0)}
   const toggleTheme=()=>up(s=>{s.theme=dark?'light':'dark'})
 
+  /** tick / untick TODAY (past days are locked on purpose) */
   const toggle=(id,d=ymd(D0()),silent)=>{
-    if(d!==ymd(D0()))return ''   // ← فقط امروز؛ روزهای گذشته (و آینده) رو نادیده بگیر
-    const c=structuredClone(S),h=c.habits.find(x=>x.id===id),was=h.log[d];was?delete h.log[d]:h.log[d]=1
-    const t0=troph(S.habits).total,t1=troph(c.habits).total,df=t1-t0,a=wIdx(t0),b=wIdx(t1),wn=i=>L==='fa'?W[i].n:W[i].ne
-    let m=(df>0?'+':'')+df+' 🏆'
-    if(b>a)m=X(`🎊 دنیای ${b+1}: ${wn(b)} (${m})`,`🎊 World ${b+1}: ${wn(b)} (${m})`)
-    else if(b<a)m=X(`⬇️ دنیای ${b+1} · ${m}`,`⬇️ World ${b+1} · ${m}`)
-    else if(!was){                // ← شرط d===ymd(D0()) دیگه لازم نیست، چون بالا چک شد
-      const s=streak(h)
-      if(h.goal&&s===h.goal)m+=X(' · 🎯 هدف تکمیل شد!',' · 🎯 Goal reached!')
-      else if([3,7,14,21,30,50,100,365].includes(s))m+=X(` · 🔥 استریک ${s} روزه`,` · 🔥 ${s} day streak`)
-      if(c.habits.every(x=>x.log[d]))m+=X(' · 🎉 همه انجام شد!',' · 🎉 All done!')
-    }
-    setS(c);setFresh(id+d);setTimeout(()=>setFresh(null),600);m=n(m);if(!silent)say(m);return m
+    if(d!==ymd(D0()))return ''
+    const c=structuredClone(S),h=c.habits.find(x=>x.id===id);if(!h)return ''
+    const was=h.log[d],away=daysAway(S.habits)
+    was?delete h.log[d]:h.log[d]=1
+    const t0=troph(S.habits).total,t1=troph(c.habits).total,df=t1-t0,a=wIdx(t0),b=wIdx(t1)
+    const trophy=n((df>0?'+':'')+df+' 🏆')
+    let token=false,sk=0
+    if(!was){sk=streak(h);if(sk>0&&sk%7===0&&h.awd!==d){h.awd=d;if((h.tokens??1)<MAX_TOKENS){h.tokens=(h.tokens??1)+1;token=true}}}
+    setS(c);setFresh(id+d);setTimeout(()=>setFresh(null),600)
+    if(b>a)setWup({idx:b,k:Date.now()})
+    if(was){if(!silent)say(trophy);return trophy}
+    if(silent)return trophy
+    const done=c.habits.filter(x=>x.log[d]).length
+    const {msg,big}=cheer({L,name:h.name,streak:sk,done,total:c.habits.length,comeback:away!=null&&away>=3,goal:!!h.goal&&sk===h.goal,token})
+    const mode=S.fx||'on'
+    if(mode==='off'){say(n(msg)+' · '+trophy)}
+    else{setFx({k:Date.now(),color:h.color,msg:n(msg),trophy,big:big||b>a,x:ptr.current.x,y:ptr.current.y});buzz(big);if(mode==='on')chime(sk,big||b>a)}
+    return trophy
   }
+
+  /** use / take back a rest day for today */
+  const rest=(id,on=true)=>{
+    const h=S.habits.find(x=>x.id===id),d=ymd(D0());if(!h)return
+    if(on){if((h.tokens??1)<1||h.log[d]||h.fz?.[d])return;say(X('🧊 امروز رو استراحت حساب کردم؛ استریکت سالمه','🧊 Today counts as a rest day; your streak is safe'))}
+    up(s=>{const x=s.habits.find(y=>y.id===id);x.fz=x.fz||{}
+      if(on){x.fz[d]=1;x.tokens=(x.tokens??1)-1}else if(x.fz[d]){delete x.fz[d];x.tokens=Math.min(MAX_TOKENS,(x.tokens??0)+1)}})
+  }
+
+  /* ---- when you were away: spend rest days to keep streaks alive ---- */
+  const [dayK,setDayK]=useState(ymd(D0()))
+  useEffect(()=>{const f=()=>setDayK(ymd(D0()));document.addEventListener('visibilitychange',f);const i=setInterval(f,60000);return()=>{document.removeEventListener('visibilitychange',f);clearInterval(i)}},[])
+  useEffect(()=>{
+    const r=settle(S.habits);if(!r)return
+    setS(s=>({...s,habits:r.habits}))
+    if(r.used.length){const days=r.used.reduce((x,u)=>x+u.days,0),names=r.used.map(u=>u.name).join(X('، ',', '))
+      say(X(`🧊 ${names}: نبودی، پس ${n(days)} روز استراحت خرج شد و استریکت سالمه`,`🧊 ${names}: you were away, so ${days} rest day${days>1?'s were':' was'} used and your streak is safe`))}
+  },[dayK])
 
   /* ---- timer: lives here so it keeps running while you browse other tabs ---- */
   const [now,setNow]=useState(Date.now()),ts=S.timer||T0
@@ -66,5 +95,5 @@ export function Provider({children}){
   useEffect(()=>{if(ts.run&&left<=0)finish()},[ts.run,left])
   useEffect(()=>{document.title=ts.run?`${fmt(left)} · Peyma`:'Peyma · پیما'},[ts.run,left])
 
-  return <Ctx.Provider value={{S,setS,up,L,jal,pref,dark,X,n,t,ar,R,go,sh,setSh,toast,say,toggle,toggleTheme,fresh,tm,fmt,setDur,start,pause,reset,addMin,setTH}}>{children}</Ctx.Provider>
+  return <Ctx.Provider value={{S,setS,up,L,jal,pref,dark,X,n,t,ar,R,go,sh,setSh,toast,say,toggle,rest,fx,setFx,wup,setWup,toggleTheme,fresh,tm,fmt,setDur,start,pause,reset,addMin,setTH}}>{children}</Ctx.Provider>
 }

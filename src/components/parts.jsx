@@ -13,7 +13,7 @@ export function useFit(step=15,min=16,max=53){
 }
 export function Heat({h,N}){
   const t=D0(),st=add(t,-wi(t)-(N-1)*7),cells=[]
-  for(let c=0;c<N;c++)for(let r=0;r<7;r++){const d=add(st,c*7+r),k=ymd(d);cells.push(<i key={k} className={(h.log[k]?'on ':'')+(d>t?'fu ':'')+(k===ymd(t)?'td':'')}/>)}
+  for(let c=0;c<N;c++)for(let r=0;r<7;r++){const d=add(st,c*7+r),k=ymd(d);cells.push(<i key={k} className={(h.log[k]?'on ':h.fz?.[k]?'fz ':'')+(d>t?'fu ':'')+(k===ymd(t)?'td':'')}/>)}
   return <div className="heat">{cells}</div>
 }
 export function Week({h}){const t=D0();return <div className="wk">{[6,5,4,3,2,1,0].map(i=><i key={i} className={h.log[ymd(add(t,-i))]?'on':''}/>)}</div>}

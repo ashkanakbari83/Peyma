@@ -55,7 +55,8 @@ export default function Road(){
       <div className="fm">trophies = 4 × (1 + 0.25 × (streakDay − 1))<br/>streakDay capped at 14 → max ×4.25</div>
       <div className="gc">{[1,2,3,4,5,7,10,14].map(c=><div key={c}><b>+{n(gain(c))}</b>{X('روز','Day')} {n(c)}{c===14?'+':''}</div>)}</div>
       <ul className="ex">
-        <li>{X('🔥 اگه یه روز جا بندازی، استریک همون عادت از اول شروع میشه (ضریب ×1).',"🔥 Miss a day and that habit's streak restarts (multiplier ×1).")}</li>
+        <li>{X('🧊 روز استراحت: هر ۷ روز استریک یه روز استراحت (تا ۲ تا) میگیری. اگه نیومدی، خودکار خرج میشه و استریکت نمی‌شکنه. روز استراحت کاپ نمیده ولی زنجیره رو نگه میداره.','🧊 Rest days: every 7-day streak earns a rest day (up to 2). If you are away, one is spent automatically so your streak does not break. A rest day gives no trophies but keeps the chain alive.')}</li>
+        <li>{X('🔥 اگه جا بندازی و روز استراحت نداشته باشی، ضریب استریک اون عادت از اول شروع میشه؛ ولی کاپ‌هایی که گرفتی سر جاشون می‌مونن.',"🔥 If you miss days with no rest day left, that habit's multiplier restarts — but the trophies you earned stay.")}</li>
         <li>{X('🎯 روز کامل: اگه همه عادت‌ها (حداقل ۲ تا) توی یه روز انجام بشن، ۳ کاپ جایزه می‌گیری.','🎯 Perfect day: complete all habits (2 or more) on the same day for +3 bonus trophies.')}</li>
         <li>{X('↩️ برداشتن تیک، کاپ اون رو هم برمی‌گردونه؛ کاپ‌ها همیشه از روی تاریخچه حساب میشن.','↩️ Unchecking a day takes its trophies back — trophies are always recalculated from your history.')}</li>
         <li>🌍 {X('دنیاها','Worlds')}: {W.map((x,i)=>`${x.e} ${rng(x,i)}`).join(' · ')}</li></ul></section>

@@ -24,9 +24,41 @@ export const cal={
   len:(f,j)=>{let n=28;while(j?g2j(add(f,n))[1]===g2j(f)[1]:add(f,n).getMonth()===f.getMonth())n++;return n},
 }
 
-export const mk=(name,desc,color,icon)=>({id:uid(),name,desc,color,icon,type:'build',goal:0,created:ymd(D0()),log:{},notes:{}})
-export function streak(h){let d=D0();if(!h.log[ymd(d)])d=add(d,-1);let n=0;while(h.log[ymd(d)]){n++;d=add(d,-1)}return n}
-export function bestS(h){let b=0,c=0,p=null;for(const x of Object.keys(h.log).sort()){c=p&&ymd(add(pd(p),1))===x?c+1:1;b=Math.max(b,c);p=x}return b}
+export const mk=(name,desc,color,icon)=>({id:uid(),name,desc,color,icon,type:'build',goal:0,created:ymd(D0()),log:{},notes:{},tokens:1,fz:{}})
+/* ---- streaks: a "rest day" (fz) keeps the chain alive but adds no day ---- */
+export const MAX_TOKENS=2
+const frozen=(h,k)=>!!(h.fz&&h.fz[k])
+const live=(h,k)=>!!h.log[k]||frozen(h,k)
+/** every day strictly between p and k is a rest day -> the chain is unbroken */
+export function linked(h,p,k){let d=add(pd(p),1);while(ymd(d)<k){if(!frozen(h,ymd(d)))return false;d=add(d,1)}return true}
+export function streak(h){let d=D0();if(!live(h,ymd(d)))d=add(d,-1);let n=0;while(live(h,ymd(d))){if(h.log[ymd(d)])n++;d=add(d,-1)}return n}
+export function bestS(h){let b=0,c=0,p=null;for(const x of Object.keys(h.log).sort()){c=p&&linked(h,p,x)?c+1:1;b=Math.max(b,c);p=x}return b}
+/** length of the (rest-day-aware) streak that ends on date key `end` */
+function runEnding(h,end){let d=pd(end),n=0;while(live(h,ymd(d))){if(h.log[ymd(d)])n++;d=add(d,-1)}return n}
+/**
+ * Auto "repair": when you were away, spend rest days to keep a streak alive.
+ * All-or-nothing per habit (only if every missed day can be covered, and the streak was worth saving).
+ * Returns null when nothing changed, else {habits, used:[{name,days}]}
+ */
+export function settle(habits){
+  const y=ymd(add(D0(),-1)),out=structuredClone(habits),used=[];let changed=false
+  out.forEach(h=>{
+    if(h.tokens==null){h.tokens=1;changed=true}
+    if(!h.fz){h.fz={};changed=true}
+    const keys=[...Object.keys(h.log),...Object.keys(h.fz)].sort(),last=keys[keys.length-1]
+    if(!last||last>=y||runEnding(h,last)<2)return
+    let gap=0,d=add(pd(last),1);while(ymd(d)<=y){gap++;d=add(d,1)}
+    if(gap>h.tokens)return
+    d=add(pd(last),1);while(ymd(d)<=y){h.fz[ymd(d)]=1;d=add(d,1)}
+    h.tokens-=gap;used.push({name:h.name,days:gap});changed=true
+  })
+  return changed?{habits:out,used}:null
+}
+/** days since the last real check-in on any habit (null = never) */
+export function daysAway(habits){
+  let last=null;habits.forEach(h=>Object.keys(h.log).forEach(k=>{if(!last||k>last)last=k}))
+  return last?Math.round((D0()-pd(last))/864e5):null
+}
 export function rate(h){const t=D0(),sp=Math.max(1,Math.min(30,Math.round((t-pd(h.created||ymd(t)))/864e5)+1));let n=0;for(let i=0;i<sp;i++)if(h.log[ymd(add(t,-i))])n++;return Math.round(n/sp*100)}
 
 /* ---- Trophy Road ---- */
@@ -45,7 +77,7 @@ export const W=[
 export const gain=c=>Math.round(4*(1+.25*(Math.min(c,14)-1))) // 4 x (1 + 0.25 x (streakDay-1)), streakDay capped at 14
 export const wIdx=t=>W.reduce((a,w,i)=>t>=w.m?i:a,0)
 export function troph(habits){const day={},ph={};
-  habits.forEach(h=>{let c=0,p=null;ph[h.id]=0;for(const k of Object.keys(h.log).sort()){c=p&&ymd(add(pd(p),1))===k?c+1:1;p=k;const g=gain(c);day[k]=(day[k]||0)+g;ph[h.id]+=g}})
+  habits.forEach(h=>{let c=0,p=null;ph[h.id]=0;for(const k of Object.keys(h.log).sort()){c=p&&linked(h,p,k)?c+1:1;p=k;const g=gain(c);day[k]=(day[k]||0)+g;ph[h.id]+=g}})
   if(habits.length>1)Object.keys(day).forEach(k=>{if(habits.every(h=>h.log[k]))day[k]+=3}) // perfect-day bonus
   return{total:Object.values(day).reduce((a,b)=>a+b,0),day,ph}}
 export const fmt=s=>`${p2(Math.floor(s/60))}:${p2(s%60)}`
