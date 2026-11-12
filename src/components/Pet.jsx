@@ -6,7 +6,7 @@ import {petMood,petSay} from '../lib/cheer.js'
 import {useApp} from '../store.jsx'
 
 /** the companion: a little creature in the colours of your current world; its mood follows your day */
-function Creature({mood,w,stage,hat}){
+export function Creature({mood,w,stage,hat}){
   const id=useId().replace(/:/g,''),happy=mood==='cheer',sleepy=mood==='sleepy',wave=mood==='back'||mood==='cheer'
   const body={fill:`url(#g${id})`},dark={stroke:'#2a1530',strokeWidth:3,fill:'none',strokeLinecap:'round'}
   return <svg className={'pc pm-'+mood} viewBox="0 0 120 120" width="112" height="112" aria-hidden="true">
@@ -54,7 +54,7 @@ export default function Pet(){
     <button className="pbtn" key={'b'+bump} onClick={poke} aria-label={name}><Creature mood={mood} w={w} stage={wi} hat={hat}/></button>
     <div className="pbub" key={line} role="status">
       <div className="pnm"><b>{name}</b><span className="m">{L==='fa'?w.n:w.ne} · {n(`${done}/${all}`)}</span><button className="psh" onClick={share} title={X('اشتراک‌گذاری پیشرفت','Share progress')} aria-label={X('اشتراک‌گذاری پیشرفت','Share progress')}>📤</button></div>
-      <p dir="auto">{line}</p>
+      <p dir="auto">{n(line)}</p>
     </div>
   </section>
 }

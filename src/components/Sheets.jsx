@@ -1,5 +1,5 @@
 import {useState} from 'react'
-import {C,IC,mk,pd,cal,monthName,ymd,D0} from '../lib/core.js'
+import {C,IC,GIFT,mk,pd,cal,monthName,ymd,D0} from '../lib/core.js'
 import {ITEMS,RAR} from '../lib/chest.js'
 import {useApp,KEY,seed} from '../store.jsx'
 import Icon from './Icon.jsx'
@@ -18,7 +18,7 @@ function Form({id,close}){
   const [f,setF]=useState(()=>h?{min:'',why:'',cue:'',act:'',rt:'',...h}:{name:'',desc:'',color:C[0],icon:'pulse',type:'build',goal:0,min:'',why:'',cue:'',act:'',rt:''}),set=(k,v)=>setF(o=>({...o,[k]:v}))
   const save=()=>{const name=f.name.trim();if(!name)return
     up(s=>{if(h)Object.assign(s.habits.find(x=>x.id===id),{name,desc:f.desc,color:f.color,icon:f.icon,type:f.type,goal:f.goal,min:f.min.trim(),why:f.why.trim(),cue:f.cue.trim(),act:f.act.trim(),rt:f.rt})
-      else{const x=mk(name,f.desc,f.color,f.icon);Object.assign(x,{type:f.type,goal:f.goal,min:f.min.trim(),why:f.why.trim(),cue:f.cue.trim(),act:f.act.trim(),rt:f.rt});s.habits.push(x)}})
+      else{const x=mk(name,f.desc,f.color,f.icon);if(!s.habits.length)x.gift=GIFT;Object.assign(x,{type:f.type,goal:f.goal,min:f.min.trim(),why:f.why.trim(),cue:f.cue.trim(),act:f.act.trim(),rt:f.rt});s.habits.push(x)}})
     if(f.rt&&typeof Notification!=='undefined'&&Notification.permission==='default')Notification.requestPermission().catch(()=>{});close()}
   return <div style={{'--c':f.color}}>
     <div className="hero"><Icon n={f.icon}/></div>
@@ -53,7 +53,7 @@ function Del({id,close}){
     <button className="save red" onClick={()=>arm?(up(s=>{s.habits=s.habits.filter(x=>x.id!==id)}),go('home')):setArm(true)}>{t(arm?'Tap again to delete':'Delete habit')}</button></>
 }
 function Settings({close}){
-  const {S,up,setS,t,X,pref,say,L,n,equip}=useApp(),[arm,setArm]=useState(false),[txt,setTxt]=useState(''),json=JSON.stringify(S),own=S.coll||[]
+  const {S,up,setS,t,X,pref,say,L,n,equip,inst,install}=useApp(),[arm,setArm]=useState(false),[txt,setTxt]=useState(''),json=JSON.stringify(S),own=S.coll||[]
   const load=raw=>{try{const d=JSON.parse(raw);if(!Array.isArray(d.habits))throw 0;setS(d);say(t('Imported ✓'))}catch{say(t('Invalid backup'))}}
   const restore=()=>load(txt)
   const dl=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([json],{type:'application/json'}));a.download='peyma-backup-'+ymd(D0())+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),4000);say(X('فایل بک‌آپ ذخیره شد 💾','Backup file saved 💾'))}
@@ -67,6 +67,11 @@ function Settings({close}){
     <Lb>{X(`کلکسیون پیمو · ${n(own.length)}/${n(ITEMS.length)}`,`COMPANION COLLECTION · ${own.length}/${ITEMS.length}`)}</Lb>
     <div className="coll">{ITEMS.map(i=>{const has=own.includes(i.id);return <button key={i.id} disabled={!has} className={(has?'':'lock ')+(S.hat===i.id?'sel':'')} style={{'--rc':RAR[i.r].c}} title={has?(L==='fa'?i.fa:i.en):X('هنوز پیدا نکردی — صندوق روزهای کامل','Not found yet — chests come from complete days')} onClick={()=>equip(i.id)}>{has?i.e:'🔒'}</button>})}</div>
     <p className="hint" style={{margin:'6px 6px 4px'}}>{X('روزی که همه‌ی عادت‌ها رو بزنی شانس یه صندوق داری؛ هر ۷ روز استریک و هر دنیای جدید، صندوق تضمینیه.','Finish every habit for a day and you may get a chest; every 7-day streak and new world guarantees one.')}</p>
+    {(()=>{const sa=typeof matchMedia!=='undefined'&&(matchMedia('(display-mode: standalone)').matches||navigator.standalone),ios=/iphone|ipad|ipod/i.test(navigator.userAgent)
+      if(sa)return null
+      if(inst)return <><Lb>{X('نصب برنامه','INSTALL APP')}</Lb><div className="inst"><span>📲 <b>{X('پیما رو روی صفحه‌ی اصلی نصب کن','Install Peyma on your home screen')}</b><br/>{X('بدون نوار مرورگر، سریع‌تر و آفلاین.','No browser bar, faster, works offline.')}</span><button onClick={install}>{X('نصب','Install')}</button></div></>
+      if(ios)return <><Lb>{X('نصب برنامه','INSTALL APP')}</Lb><div className="inst"><span>📲 {X('در Safari دکمه‌ی اشتراک (□↑) رو بزن و «Add to Home Screen» رو انتخاب کن.','In Safari tap Share (□↑), then "Add to Home Screen".')}</span></div></>
+      return null})()}
     <Lb>{X('بک‌آپ فایلی','BACKUP FILE')}</Lb>
     <div className="seg" style={{gridTemplateColumns:'1fr 1fr'}}><button onClick={dl}>💾 {X('دانلود','Download')}</button><label className="filebtn">📂 {X('بازیابی از فایل','Restore')}<input type="file" accept="application/json,.json" hidden onChange={pick}/></label></div>
     <Lb>{t('BACKUP (COPY)')}</Lb><textarea className="in" readOnly value={json} onFocus={e=>e.target.select()}/>

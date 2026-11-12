@@ -25,6 +25,9 @@
 - **Why / if-then plan / reminder** – store your reason and an implementation intention per habit; reminders fire while the app is open
 - **Mystery chest** – finish all habits for a day for a chance at a cosmetic for your companion (guaranteed on milestones, never affects trophies)
 - **Share card & backup** – export a PNG progress card; download / restore a JSON backup
+- **First-run welcome** – meet and name your companion, pick a few starter habits (the very first habit starts with 3 gift trophies)
+- **Installable PWA** – manifest, icons, offline-first service worker, install button in Settings (iOS shows the Add-to-Home-Screen hint)
+- **Self-hosted fonts** (Vazirmatn + JetBrains Mono via `@fontsource`) – no Google Fonts request, works offline and in restricted networks
 - **Persian & English** (RTL / LTR), **Jalali & Gregorian** calendar
 - **Dark / Light / System** theme, fully responsive (phone → desktop)
 - **No backend** – everything is stored in your browser (`localStorage`), with backup / restore in Settings

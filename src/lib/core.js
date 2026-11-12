@@ -24,8 +24,8 @@ export const cal={
   len:(f,j)=>{let n=28;while(j?g2j(add(f,n))[1]===g2j(f)[1]:add(f,n).getMonth()===f.getMonth())n++;return n},
 }
 
-export const GIFT=3 // endowed progress: every new habit starts with a few trophies already in the bank
-export const mk=(name,desc,color,icon)=>({id:uid(),name,desc,color,icon,type:'build',goal:0,created:ymd(D0()),log:{},notes:{},tokens:1,fz:{},gift:GIFT,min:'',why:'',cue:'',act:'',rt:''})
+export const GIFT=3 // endowed progress: your very first habit starts with a few trophies already in the bank
+export const mk=(name,desc,color,icon)=>({id:uid(),name,desc,color,icon,type:'build',goal:0,created:ymd(D0()),log:{},notes:{},tokens:1,fz:{},gift:0,min:'',why:'',cue:'',act:'',rt:''})
 /* ---- streaks: a "rest day" (fz) keeps the chain alive but adds no day ---- */
 export const MAX_TOKENS=2
 const frozen=(h,k)=>!!(h.fz&&h.fz[k])

@@ -1,12 +1,12 @@
 import {createContext,useContext,useEffect,useRef,useState} from 'react'
-import {D0,ymd,p2,mk,troph,wIdx,W,streak,fmt,settle,daysAway,MAX_TOKENS} from './lib/core.js'
+import {D0,ymd,p2,mk,GIFT,troph,wIdx,W,streak,fmt,settle,daysAway,MAX_TOKENS} from './lib/core.js'
 import {cheer} from './lib/cheer.js'
 import {chime,buzz} from './lib/fx.js'
 import {drawItem} from './lib/chest.js'
 import {TR,PD} from './lib/i18n.js'
 
 export const KEY='peyma.v1'
-export const seed=()=>({view:0,habits:[mk('ورزش','حداقل سی دقیقه تحرک','#fb923c','dumb')]})
+export const seed=()=>{const h=mk('ورزش','حداقل سی دقیقه تحرک','#fb923c','dumb');h.gift=GIFT;return{view:0,habits:[h]}}
 function load(){try{const d=JSON.parse(localStorage.getItem(KEY));if(d&&Array.isArray(d.habits))return d}catch{}return seed()}
 const parse=()=>{const [v,id]=(typeof location==='undefined'?'':location.hash).slice(2).split('/');return{v:v||'home',id}}
 const T0={dur:1500,left:1500,run:false,endAt:0,habit:''}
@@ -15,7 +15,7 @@ const Ctx=createContext(null)
 export const useApp=()=>useContext(Ctx)
 
 export function Provider({children}){
-  const [S,setS]=useState(load),[R,setR]=useState(parse),[sh,setSh]=useState(null),[toast,setToast]=useState(null),[fresh,setFresh]=useState(null),[fx,setFx]=useState(null),[wup,setWup]=useState(null),[chest,setChest]=useState(null)
+  const [S,setS]=useState(load),[R,setR]=useState(parse),[sh,setSh]=useState(null),[toast,setToast]=useState(null),[fresh,setFresh]=useState(null),[fx,setFx]=useState(null),[wup,setWup]=useState(null),[chest,setChest]=useState(null),[inst,setInst]=useState(null)
   const ptr=useRef({x:0,y:0})
   const [sys,setSys]=useState(()=>typeof matchMedia!=='undefined'&&matchMedia('(prefers-color-scheme: dark)').matches)
   const tmr=useRef(0)
@@ -32,6 +32,8 @@ export function Provider({children}){
 
   useEffect(()=>{ptr.current={x:innerWidth/2,y:innerHeight*.6};const f=e=>{ptr.current={x:e.clientX,y:e.clientY}};addEventListener('pointerdown',f,{capture:true});return()=>removeEventListener('pointerdown',f,{capture:true})},[])
 
+  useEffect(()=>{const f=e=>{e.preventDefault();setInst(e)},g=()=>setInst(null);addEventListener('beforeinstallprompt',f);addEventListener('appinstalled',g);return()=>{removeEventListener('beforeinstallprompt',f);removeEventListener('appinstalled',g)}},[])
+  const install=async()=>{if(!inst)return;inst.prompt();try{await inst.userChoice}catch{}setInst(null)}
   const up=fn=>setS(s=>{const c=structuredClone(s);fn(c);return c})
   const say=m=>{setToast({m,k:Date.now()});clearTimeout(tmr.current);tmr.current=setTimeout(()=>setToast(null),2600)}
   const go=(v,id)=>{try{history.pushState(0,'',v==='home'?location.pathname:`#/${v}/${id||''}`)}catch{}setR({v,id});setSh(null);scrollTo(0,0)}
@@ -95,7 +97,8 @@ export function Provider({children}){
       if(!fired)return
       const h=fired,body=(h.cue||h.act?`${h.cue?(L==='fa'?'وقتی '+h.cue:'When '+h.cue):''}${h.act?' → '+h.act:''}`:(L==='fa'?'یه قدم کوچیک کافیه 🌱':'One small step is enough 🌱'))+(h.why?`\n«${h.why}»`:'')
       up(x=>{x.rn={...(x.rn||{}),[h.id]:d}})
-      try{if(typeof Notification!=='undefined'&&Notification.permission==='granted')new Notification((L==='fa'?'وقتشه: ':'Time for: ')+h.name,{body,tag:'peyma-'+h.id})}catch{}
+      try{if(typeof Notification!=='undefined'&&Notification.permission==='granted'){const ti=(L==='fa'?'وقتشه: ':'Time for: ')+h.name,op={body,tag:'peyma-'+h.id,icon:'icon-192.png'}
+        if(navigator.serviceWorker?.controller)navigator.serviceWorker.ready.then(r=>r.showNotification(ti,op));else new Notification(ti,op)}}catch{}
       say('⏰ '+h.name+(h.min?' · ⚡ '+h.min:''))}
     f();const i=setInterval(f,20000);return()=>clearInterval(i)
   },[L])
@@ -119,5 +122,5 @@ export function Provider({children}){
   useEffect(()=>{if(ts.run&&left<=0)finish()},[ts.run,left])
   useEffect(()=>{document.title=ts.run?`${fmt(left)} · Peyma`:'Peyma · پیما'},[ts.run,left])
 
-  return <Ctx.Provider value={{S,setS,up,L,jal,pref,dark,X,n,t,ar,R,go,sh,setSh,toast,say,toggle,rest,fx,setFx,wup,setWup,chest,setChest,equip,toggleTheme,fresh,tm,fmt,setDur,start,pause,reset,addMin,setTH}}>{children}</Ctx.Provider>
+  return <Ctx.Provider value={{S,setS,up,L,jal,pref,dark,X,n,t,ar,R,go,sh,setSh,toast,say,toggle,rest,fx,setFx,wup,setWup,chest,setChest,equip,inst,install,toggleTheme,fresh,tm,fmt,setDur,start,pause,reset,addMin,setTH}}>{children}</Ctx.Provider>
 }

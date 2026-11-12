@@ -307,3 +307,18 @@ html[data-world] body{background:radial-gradient(90% 55% at 50% -8%,color-mix(in
 .coll button.lock{opacity:.4;filter:grayscale(1);border-color:var(--bd);background:var(--cd);font-size:18px}
 .seg .filebtn{display:block;text-align:center;padding:12px;border-radius:15px;font-size:17px;color:var(--mu);cursor:pointer;transition:.25s}.seg .filebtn:active{background:var(--bd)}
 @media(max-width:380px){.mnb{width:40px}.mnb span{display:none}}
+
+/* ===== Round 3: polish ===== */
+.col i{flex:none}                      /* weekday bars were stretched by .bars i{flex:1} */
+.welcome .pw{display:grid;place-items:center;margin:2px 0 6px}
+.welcome .sug{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:14px 0 4px}
+.welcome .sug button{display:flex;align-items:center;gap:7px;padding:9px 14px 9px 12px;border-radius:99px;font-size:15px;background:color-mix(in srgb,var(--c) 10%,var(--s2));border:1.5px solid color-mix(in srgb,var(--c) 26%,transparent);color:var(--tx);transition:.22s cubic-bezier(.2,1.4,.4,1)}
+.welcome .sug button svg{width:17px;height:17px;color:var(--c)}
+.welcome .sug button.on{background:color-mix(in srgb,var(--c) 28%,var(--s2));border-color:var(--c);transform:scale(1.05);box-shadow:0 6px 18px -6px var(--c)}
+.welcome .dots{display:flex;gap:6px;justify-content:center;margin-top:14px}.welcome .dots i{width:7px;height:7px;border-radius:9px;background:var(--bd);transition:.3s}.welcome .dots i.on{width:22px;background:var(--w1)}
+.welcome .in{margin-top:8px;text-align:center}
+.inst{display:flex;align-items:center;gap:10px;padding:13px 15px;border-radius:18px;background:var(--s2);border:1px solid var(--bd);margin:2px 0 4px;font-size:14px;line-height:1.8;color:var(--t2)}
+.inst b{color:var(--tx)}.inst button{margin-inline-start:auto;flex:none;padding:9px 16px;border-radius:99px;background:var(--ac);color:#0b0b14;font-weight:700;font-size:14px}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+.wucard .save.gh{background:var(--s3);color:var(--tx);height:46px;font-size:16px;margin-top:8px}
+.mnl{display:block;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
